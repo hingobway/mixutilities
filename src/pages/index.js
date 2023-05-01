@@ -6,12 +6,13 @@ import {
   outputDeviceListState,
   inputIDState,
   outputIDState,
+  newMsgState,
 } from '@/state/midi';
 
 import useWS, { ReadyState } from 'react-use-websocket';
 
 import Wrapper from '@/components/Wrapper';
-import Button from '@/components/base/Button';
+import PanelMacros from '@/components/PanelMacros';
 
 import { AdjustmentsVerticalIcon } from '@heroicons/react/24/outline';
 
@@ -64,6 +65,15 @@ export default function Home() {
     }
   }, [lastJsonMessage]);
 
+  // receive sends from other modules
+  const [newMsg, setNewMsg] = useRecoilState(newMsgState);
+  useEffect(() => {
+    if (newMsg != null) {
+      sendJsonMessage(newMsg);
+      setNewMsg(null);
+    }
+  }, [newMsg]);
+
   // on MIDI device change:
   useEffect(() => {
     if (inputDevice > -1 && outputDevice > -1)
@@ -86,12 +96,7 @@ export default function Home() {
       <main className="t">
         <Wrapper>
           <div className="flex h-full flex-col">
-            <div className="flex-1 p-4">
-              <div className="flex flex-row justify-start gap-2">
-                <Button onClick={() => sendM(0)}>P 0</Button>
-                <Button onClick={() => sendM(1)}>P 1</Button>
-              </div>
-            </div>
+            <PanelMacros />
             <div className="mx-4 h-0.5 bg-zinc-900/70"></div>
             <div className="flex flex-1 items-center justify-center text-sm text-zinc-500">
               blank panel.

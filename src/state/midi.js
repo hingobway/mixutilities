@@ -18,6 +18,11 @@ const outputIDState = atom({
   default: -1,
 });
 
+const newMsgState = atom({
+  key: 'NewMsg',
+  default: null,
+});
+
 // const inputDeviceState = selector({
 //   key: 'InputDevice',
 //   get: ({ get }) => {
@@ -40,4 +45,5 @@ export {
   outputDeviceListState,
   inputIDState,
   outputIDState,
+  newMsgState,
 };

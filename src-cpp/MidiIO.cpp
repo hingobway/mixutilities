@@ -60,6 +60,12 @@ MidiIO::MidiIO() : inputDevices_{}, outputDevices_{}
 // main io functions
 void MidiIO::initIO(int inID, int outID)
 {
+  if (MidiIO::is_active_)
+  {
+    Pm_Close(MidiIO::istream_);
+    Pm_Close(MidiIO::ostream_);
+  }
+
   Pm_OpenOutput(&MidiIO::ostream_, outID, nullptr, MIDI_OUT_BUFFER_SIZE, nullptr, nullptr, 0);
   Pm_OpenInput(&MidiIO::istream_, inID, nullptr, MIDI_IN_BUFFER_SIZE, nullptr, nullptr);
 
@@ -78,6 +84,8 @@ void MidiIO::receiveMidi(PtTimestamp timestamp, void *userData)
   std::stringstream st;
   std::string sto{};
   json jup;
+  MidiIO::MIDIMessage nmsg{};
+  MidiIO::MIDIMessage mg1{0x250000, 1, 1}; // TODO move this somewhere for constants
 
   // check for output requests // TODO finish alongside send() method
   do
@@ -114,40 +122,31 @@ void MidiIO::receiveMidi(PtTimestamp timestamp, void *userData)
   for (i = 0; i < 5; i++)
     count += MidiIO::receive_msg_.at(i + 1) << (7 * i);
 
-  // if (MidiIO::receive_msg_count_ == -1)
-  //   MidiIO::receive_msg_count_ = count;
-  // if (MidiIO::receive_msg_count_ != count)
-  // {
-  //   std::cout << "error: incoming sysex has incorrect count\n";
-  //   goto error;
-  // }
-  // for (i = 6; i < (int(MidiIO::receive_msg_.size()) - 1); i++)
-  // {
-  //   if (MidiIO::receive_msg_.at(i) != i % 128)
-  //   {
-  //     std::cout << "error: incoming sysex has bad data\n";
-  //     goto error;
-  //   }
-  // }
   if (MidiIO::receive_msg_.back() != MIDI_EOX)
   {
     std::cout << "error: no end of sysex\n";
     goto error;
   }
 
-  for (auto it : MidiIO::receive_msg_)
+  for (auto &it : MidiIO::receive_msg_)
     st << std::hex << std::setw(2) << std::setfill('0') << (int)it << " ";
   sto = st.str();
   std::cout << "received: " << sto << "\n";
 
+  nmsg = MidiIO::hex2s(MidiIO::receive_msg_);
+
   // mute group hijack
-  if (sto == "f0 43 10 3e 19 01 00 25 00 00 00 00 00 00 00 00 01 f7 ")
+  if (nmsg.ac == mg1.ac && nmsg.chan == mg1.chan && nmsg.val == mg1.val)
   {
-    MidiIO::send(3);
+    nmsg.val = 0;
+    MidiIO::send(nmsg);
     jup["type"] = "button_push";
+    Primary::run_macro();
   }
   else
   {
+    Primary::push_mem(nmsg);
+
     jup["type"] = "midi_update";
     jup["data"] = {{"raw", st.str()}};
   }
@@ -161,100 +160,54 @@ error:
   return; // TODO add something else here?
 }
 
-// void MidiIO::initIn(int deviceID)
-// {
-//   if (MidiIO::istream_ != nullptr)
-//   {
-//     Pm_Close(MidiIO::istream_);
-//   }
-//   PmError err{};
-//   err = Pm_OpenInput(&MidiIO::istream_, deviceID, nullptr, MIDI_IN_BUFFER_SIZE, nullptr, nullptr);
-//   if (err != pmNoError)
-//   {
-//     // TODO handle error
-//     std::cout << "error opening midi input device.\n";
-//   }
-
-//   // create queues
-//   MidiIO::midi_to_main_ = Pm_QueueCreate(32, sizeof(int32_t));
-//   std::assert(MidiIO::midi_to_main_ != nullptr);
-//   MidiIO::main_to_midi_ = Pm_QueueCreate(32, sizeof(int32_t));
-//   std::assert(MidiIO::main_to_midi_ != nullptr);
-// }
-// void MidiIO::initOut(int deviceID)
-// {
-//   if (MidiIO::ostream_ != nullptr)
-//   {
-//     Pm_Close(MidiIO::ostream_);
-//   }
-//   PmError err{};
-//   err = Pm_OpenOutput(&MidiIO::ostream_, deviceID, nullptr, MIDI_OUT_BUFFER_SIZE, nullptr, nullptr, 0);
-//   if (err != pmNoError)
-//   {
-//     // TODO handle error
-//     std::cout << "error opening midi output device.\n";
-//   }
-// }
-
-void MidiIO::send(int preset)
+void MidiIO::send(MidiIO::MIDIMessage &msg)
 {
   if (MidiIO::ostream_ == nullptr)
   {
     // TODO handle error
     std::cout << "error: midi send requested but no output stream is available.\n";
+    return;
   }
 
+  auto output = MidiIO::s2hex(msg);
+
+  // TODO rewrite to use queueing
+  Pm_WriteSysEx(MidiIO::ostream_, 0, output.data());
+}
+
+MidiIO::MIDIMessage MidiIO::hex2s(const std::vector<unsigned char> &msg)
+{
+  MidiIO::MIDIMessage sm{};
+  sm.ac = (unsigned int)msg.at(7) << 16 | (unsigned int)msg.at(8) << 8 | (unsigned int)msg.at(9);
+  sm.chan = (unsigned int)msg.at(10) << 8 | (unsigned int)msg.at(11);
+  sm.val = (unsigned long)msg.at(12) << 32 | (unsigned long)msg.at(13) << 24 | (unsigned long)msg.at(14) << 16 | (unsigned long)msg.at(15) << 8 | (unsigned long)msg.at(16);
+  sm.chan++;
+  return sm;
+}
+std::vector<unsigned char> MidiIO::s2hex(const MidiIO::MIDIMessage &sm)
+{
   std::vector<unsigned char> message{/* 00 */ 0xF0, 0x43, 0x10, 0x3E, 0x19, 0x01, 0x00, // signature
                                      /* 07 */ 0x00, 0x00, 0x00,                         // action + channel type
                                      /* 10 */ 0x00, 0x00,                               // channel (definitely 11, maybe also 10)
                                      /* 12 */ 0x00, 0x00, 0x00, 0x00, 0x00,             // value
                                      /* 17 */ 0xF7};                                    // end of message
 
-  unsigned int ac{}, chan{};
-  unsigned long val{};
-
-  switch (preset)
-  {
-  case 0: // chan 25 to unity
-    ac = 0x370000;
-    chan = 25;
-    val = 0x0637;
-    break;
-  case 1: // chan 25 to -inf
-    ac = 0x370000;
-    chan = 25;
-    val = 0;
-    break;
-
-  case 3: // turn off mute group 1
-    ac = 0x250000;
-    chan = 1;
-    val = 0;
-    break;
-  default:
-    ac = 0x350000;
-    chan = 26;
-    val = 1;
-  }
-
   // set ac
-  message.at(7) = (ac >> 16) & 0xFF;
-  message.at(8) = (ac >> 8) & 0xFF;
-  message.at(9) = ac & 0xFF;
+  message.at(7) = (sm.ac >> 16) & 0xFF;
+  message.at(8) = (sm.ac >> 8) & 0xFF;
+  message.at(9) = sm.ac & 0xFF;
   // set chan
-  chan = chan - 1;
+  unsigned int chan = sm.chan - 1;
   message.at(10) = (chan >> 8) & 0xFF;
   message.at(11) = chan & 0xFF;
   // set val
-  message.at(12) = (val >> 32) & 0xFF;
-  message.at(13) = (val >> 24) & 0xFF;
-  message.at(14) = (val >> 16) & 0xFF;
-  message.at(15) = (val >> 8) & 0xFF;
-  message.at(16) = val & 0xFF;
+  message.at(12) = (sm.val >> 32) & 0xFF;
+  message.at(13) = (sm.val >> 24) & 0xFF;
+  message.at(14) = (sm.val >> 16) & 0xFF;
+  message.at(15) = (sm.val >> 8) & 0xFF;
+  message.at(16) = sm.val & 0xFF;
 
-  // TODO rewrite to use queueing
-
-  Pm_WriteSysEx(MidiIO::ostream_, 0, message.data());
+  return message;
 }
 
 MidiIO::~MidiIO()

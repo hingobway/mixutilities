@@ -36,19 +36,25 @@ private:
   static void receiveMidi(PtTimestamp ts, void *userData);
 
 public:
+  struct MIDIMessage
+  {
+    unsigned int ac;
+    unsigned int chan;
+    unsigned long val;
+  };
+
   MidiIO();
   ~MidiIO();
 
   std::map<int, std::string> getInputDevices() { return inputDevices_; }
   std::map<int, std::string> getOutputDevices() { return outputDevices_; }
 
-  // TODO delete these once redundant
-  void initOut(int deviceID);
-  void initIn(int deviceID);
-
   void initIO(int inID, int outID);
 
-  static void send(int preset);
+  static void send(MidiIO::MIDIMessage &msg);
+
+  static MIDIMessage hex2s(const std::vector<unsigned char> &msg);
+  static std::vector<unsigned char> s2hex(const MIDIMessage &msg);
 };
 
 #endif
