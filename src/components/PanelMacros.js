@@ -27,7 +27,8 @@ const PanelMacros = () => {
           <div className="text-zinc-500">Trigger:</div>
           <div className="text-sky-400">Mute Group 1</div>
         </div>
-        <div className="flex flex-row gap-4">
+        {/* record controls */}
+        <div className="flex flex-row gap-4 rounded-xl border border-zinc-100/10 bg-zinc-700/30 p-4">
           {/* record icon */}
           <div className=" relative my-auto h-8 w-8 rounded-full bg-zinc-200 p-1.5">
             <div
@@ -38,12 +39,15 @@ const PanelMacros = () => {
           </div>
           {/* toggle button */}
           <Button
-            className="bg-red-700 hover:bg-red-800"
+            className="!hover:bg-red-800 !bg-red-700"
             onClick={() => setRecord(!record)}
           >
             Toggle Recording
           </Button>
-          <Button className="!p-2" onClick={clearMacro}>
+          <Button
+            className="!hover:bg-amber-800 !bg-amber-700 !p-2"
+            onClick={clearMacro}
+          >
             <TrashIcon className="w-5" />
           </Button>
         </div>
