@@ -7,7 +7,7 @@
     "distDir": "../out"
   },
   "package": {
-    "productName": "learn-tauri",
+    "productName": "MixUtilities",
     "version": "0.1.0"
   },
   "tauri": {
@@ -32,7 +32,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.hingobway.learn-tauri",
+      "identifier": "me.h-n.mixutilities",
       "longDescription": "",
       "macOS": {
         "entitlements": null,

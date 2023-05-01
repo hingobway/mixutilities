@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 
+import { useRecoilState, useRecoilValue } from 'recoil';
+import {
+  inputDeviceListState,
+  outputDeviceListState,
+  inputIDState,
+  outputIDState,
+} from '@/state/midi';
+
 import useWS, { ReadyState } from 'react-use-websocket';
 
+import Wrapper from '@/components/Wrapper';
 import Button from '@/components/base/Button';
 
 import { AdjustmentsVerticalIcon } from '@heroicons/react/24/outline';
@@ -11,6 +20,10 @@ const WS_URL = `ws://localhost:${PORT}`;
 
 export default function Home() {
   const [connectStatus, setConnectStatus] = useState(false);
+  const [, setInputDeviceList] = useRecoilState(inputDeviceListState);
+  const [, setOutputDeviceList] = useRecoilState(outputDeviceListState);
+  const inputDevice = useRecoilValue(inputIDState);
+  const outputDevice = useRecoilValue(outputIDState);
 
   const { sendJsonMessage, lastJsonMessage, readyState } = useWS(WS_URL, {
     shouldReconnect: (closeEvent) => {
@@ -38,42 +51,53 @@ export default function Home() {
   // on message:
   useEffect(() => {
     if (lastJsonMessage !== null) {
-      console.log(lastJsonMessage);
+      switch (lastJsonMessage.type) {
+        case 'device_list':
+          lastJsonMessage.data.input.unshift([-1, 'select input device']);
+          lastJsonMessage.data.output.unshift([-1, 'select output device']);
+          setInputDeviceList(lastJsonMessage.data.input);
+          setOutputDeviceList(lastJsonMessage.data.output);
+          break;
+        default:
+          console.log(lastJsonMessage);
+      }
     }
   }, [lastJsonMessage]);
+
+  // on MIDI device change:
+  useEffect(() => {
+    if (inputDevice > -1 && outputDevice > -1)
+      sendJsonMessage({
+        type: 'set_midi_devices',
+        data: { input: inputDevice, output: outputDevice },
+      });
+  }, [inputDevice, outputDevice]);
 
   const handleButton = (e) => {
     const { innerText: text } = e.target;
     sendJsonMessage({ type: 'message', data: { text } });
   };
-  const unknownSend = () => {
-    sendJsonMessage({ type: 'strange', data: { text: 'hello' } });
+  const sendM = (n) => {
+    sendJsonMessage({ type: 'send_midi_msg', data: { preset: n } });
   };
 
   return (
     <>
       <main className="t">
-        {/* header bar */}
-        <div className="flex flex-row justify-between bg-zinc-900 p-2 px-4">
-          {/* header left side */}
-          <div className="flex flex-row items-center gap-4">
-            <AdjustmentsVerticalIcon className="h-6" />
-            <div className="text-xl">MixUtilities</div>
+        <Wrapper>
+          <div className="flex h-full flex-col">
+            <div className="flex-1 p-4">
+              <div className="flex flex-row justify-start gap-2">
+                <Button onClick={() => sendM(0)}>P 0</Button>
+                <Button onClick={() => sendM(1)}>P 1</Button>
+              </div>
+            </div>
+            <div className="mx-4 h-0.5 bg-zinc-900/70"></div>
+            <div className="flex flex-1 items-center justify-center text-sm text-zinc-500">
+              blank panel.
+            </div>
           </div>
-          {/* header right side */}
-          <div className="flex flex-row gap-2">
-            <Button onClick={handleButton}>Hello</Button>
-            <Button onClick={handleButton}>World</Button>
-            <Button className="!bg-red-700" onClick={unknownSend}>
-              something new...
-            </Button>
-          </div>
-        </div>
-
-        {/* main content */}
-        <div className="flex h-full items-center justify-center text-sm text-zinc-500">
-          content here.
-        </div>
+        </Wrapper>
 
         {/* connect status */}
         <div

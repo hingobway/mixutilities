@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 import Head from 'next/head';
 
+import { RecoilRoot } from 'recoil';
+
 import Layout from '@/components/layout';
 
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
-    window.addEventListener('contextmenu', (e) => e.preventDefault());
+    // window.addEventListener('contextmenu', (e) => e.preventDefault());
   }, []);
 
   return (
@@ -16,7 +18,9 @@ export default function App({ Component, pageProps }) {
         <meta charSet="UTF-8" />
       </Head>
       <Layout>
-        <Component {...pageProps} />
+        <RecoilRoot>
+          <Component {...pageProps} />
+        </RecoilRoot>
       </Layout>
     </>
   );
