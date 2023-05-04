@@ -32,20 +32,19 @@ const PanelMacros = () => {
           {/* record icon */}
           <div className=" relative my-auto h-8 w-8 rounded-full bg-zinc-200 p-1.5">
             <div
-              className={`h-full w-full flex-1 rounded-full shadow-inner ${
-                record ? `bg-red-500` : `bg-zinc-400`
-              }`}
+              className={`h-full w-full flex-1 rounded-full shadow-inner ${record ? `bg-red-500 animate-pulse` : `bg-zinc-400 animate-none`
+                }`}
             ></div>
           </div>
           {/* toggle button */}
           <Button
-            className="!hover:bg-red-800 !bg-red-700"
+            className="hover:!bg-red-800 !bg-red-700"
             onClick={() => setRecord(!record)}
           >
             Toggle Recording
           </Button>
           <Button
-            className="!hover:bg-amber-800 !bg-amber-700 !p-2"
+            className="hover:!bg-amber-800 !bg-amber-700 !p-2"
             onClick={clearMacro}
           >
             <TrashIcon className="w-5" />
