@@ -73,7 +73,7 @@ void ws_server::on_message(websocketpp::connection_hdl hdl, server::message_ptr 
     {
       this->locked_ = true;
     }
-    this->cb_ready_(); // TODO only send the first time (move up into the if statement)
+    this->cb_ready_();
   }
   else
   {

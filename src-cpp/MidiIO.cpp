@@ -218,6 +218,4 @@ MidiIO::~MidiIO()
   Pm_Close(MidiIO::istream_);
   Pm_Close(MidiIO::ostream_);
   Pm_Terminate();
-
-  // TODO Pm_Close(stream) for input too
 }
