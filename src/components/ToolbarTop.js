@@ -1,26 +1,34 @@
-import { useRecoilValue, useRecoilState } from 'recoil';
-import {
-  inputDeviceListState,
-  outputDeviceListState,
-  inputIDState,
-  outputIDState,
-} from '@/state/midi';
+import { useState, useEffect } from 'react';
 
-import { Listbox } from '@headlessui/react';
+import { useLogic, useWatch } from '@/hooks/logic';
 
-import {
-  ChevronUpDownIcon,
-  CheckIcon,
-  DocumentIcon,
-} from '@heroicons/react/24/outline';
+import { DocumentIcon } from '@heroicons/react/24/outline';
 
 import Dropdown from '@/components/base/Dropdown';
 
+const ph_in = 'select input device';
+const ph_out = 'select output device';
+
 const ToolbarTop = () => {
-  const inputDevices = useRecoilValue(inputDeviceListState);
-  const outputDevices = useRecoilValue(outputDeviceListState);
-  const [inputID, setInputID] = useRecoilState(inputIDState);
-  const [outputID, setOutputID] = useRecoilState(outputIDState);
+  const [inputDevices, setInputDevices] = useState([[-1, ph_in]]);
+  const [outputDevices, setOutputDevices] = useState([[-1, ph_out]]);
+  const [inputID, setInputID] = useState(-1);
+  const [outputID, setOutputID] = useState(-1);
+
+  const { sendLogic } = useLogic();
+  useWatch('device_list', ({ input, output }) => {
+    input.unshift([-1, ph_in]);
+    output.unshift([-1, ph_out]);
+    setInputDevices(input);
+    setOutputDevices(output);
+  });
+
+  // on MIDI device change:
+  useEffect(() => {
+    if (inputID > -1 && outputID > -1)
+      sendLogic('set_midi_devices', { input: inputID, output: outputID });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputID, outputID]);
 
   return (
     <>

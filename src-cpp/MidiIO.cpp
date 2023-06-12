@@ -180,7 +180,7 @@ MidiIO::MIDIMessage MidiIO::hex2s(const std::vector<unsigned char> &msg)
   MidiIO::MIDIMessage sm{};
   sm.ac = (unsigned int)msg.at(7) << 16 | (unsigned int)msg.at(8) << 8 | (unsigned int)msg.at(9);
   sm.chan = (unsigned int)msg.at(10) << 8 | (unsigned int)msg.at(11);
-  sm.val = (unsigned long)msg.at(12) << 32 | (unsigned long)msg.at(13) << 24 | (unsigned long)msg.at(14) << 16 | (unsigned long)msg.at(15) << 8 | (unsigned long)msg.at(16);
+  sm.val = (unsigned long long)msg.at(12) << 32 | (unsigned long long)msg.at(13) << 24 | (unsigned long long)msg.at(14) << 16 | (unsigned long long)msg.at(15) << 8 | (unsigned long long)msg.at(16);
   sm.chan++;
   return sm;
 }

@@ -24,6 +24,7 @@ private:
 
 public:
   Primary(int port);
+  ~Primary();
 
   void ready();
   void msg_handler(std::string _msg);

@@ -84,5 +84,6 @@
     "*.ipp": "cpp",
     "cassert": "cpp",
     "strstream": "cpp"
-  }
+  },
+  "editor.formatOnSave": false
 }

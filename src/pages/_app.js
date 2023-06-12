@@ -5,11 +5,15 @@ import { RecoilRoot } from 'recoil';
 
 import Layout from '@/components/layout';
 
+import { isDev } from '@/util/dev';
+
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
-    // window.addEventListener('contextmenu', (e) => e.preventDefault());
+    // remove webview context menu if in production
+    if (!isDev())
+      window.addEventListener('contextmenu', (e) => e.preventDefault());
   }, []);
 
   return (

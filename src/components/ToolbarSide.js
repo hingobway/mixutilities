@@ -1,15 +1,32 @@
-import { QueueListIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
+import { useRecoilState } from 'recoil';
+import { panelShowState } from '@/state/panels';
+
+import panels from '@/util/panelLookup';
 
 const ToolbarSide = () => {
+  const [panelShow, setPanelShow] = useRecoilState(panelShowState);
+
   return (
     <>
-      <div className="_w-12 flex flex-col items-center gap-4 p-3 py-4">
-        <div className="w-8 bg-zinc-700/60 p-1 rounded-md">
-          <QueueListIcon />
-        </div>
-        <div className="w-6">
-          <RectangleStackIcon />
-        </div>
+      <div className="flex flex-col items-center gap-3 p-3 py-4">
+        {Object.keys(panels).map((id, i) => {
+          const {
+            props: { icon: Icon },
+          } = panels[id];
+          return (
+            <button
+              key={i}
+              onClick={() => setPanelShow({ id, show: !panelShow[id] })}
+              className={`rounded-md p-1 ${
+                panelShow[id]
+                  ? `bg-zinc-700 opacity-100 hover:opacity-80`
+                  : `bg-transparent hover:bg-zinc-700/60`
+              }`}
+            >
+              <Icon className="w-6" />
+            </button>
+          );
+        })}
       </div>
     </>
   );

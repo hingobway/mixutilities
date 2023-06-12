@@ -1,58 +1,93 @@
 import { useState, useEffect } from 'react';
 
-import { useRecoilState } from 'recoil';
-import { newMsgState } from '@/state/midi';
+import { useLogic, useWatch } from '@/hooks/logic';
 
-import Button from '@/components/base/Button';
+import { asPanel } from './Panel';
+import IconButton from './base/IconButton';
 
-import { TrashIcon } from '@heroicons/react/24/outline';
+import {
+  QueueListIcon,
+  PlusIcon,
+  DocumentDuplicateIcon,
+  TrashIcon,
+  PlayCircleIcon,
+  PlusCircleIcon,
+  MinusCircleIcon,
+  ViewfinderCircleIcon,
+} from '@heroicons/react/24/outline';
 
+const PANEL_PROPS = {
+  id: 'macros',
+  name: 'Macros',
+  icon: QueueListIcon,
+};
 const PanelMacros = () => {
-  const [record, setRecord] = useState(false);
-  const [, setNewMsg] = useRecoilState(newMsgState);
-
-  useEffect(() => {
-    setNewMsg({ type: 'set_record', data: { on: record } });
-    // setNewMsg({ type: 'send_midi_msg', data: { preset: !record } });
-  }, [record]);
-
-  const clearMacro = () => {
-    setNewMsg({ type: 'clear_macro' });
-  };
+  const { sendLogic } = useLogic();
 
   return (
     <>
-      <div className="relative flex flex-1 items-center justify-center p-4">
-        <div className="absolute right-4 top-4 flex flex-row gap-2 text-sm uppercase">
-          <div className="text-zinc-500">Trigger:</div>
-          <div className="text-sky-400">Mute Group 1</div>
-        </div>
-        {/* record controls */}
-        <div className="flex flex-row gap-4 rounded-xl border border-zinc-100/10 bg-zinc-700/30 p-4">
-          {/* record icon */}
-          <div className=" relative my-auto h-8 w-8 rounded-full bg-zinc-200 p-1.5">
-            <div
-              className={`h-full w-full flex-1 rounded-full shadow-inner ${record ? `bg-red-500 animate-pulse` : `bg-zinc-400 animate-none`
-                }`}
-            ></div>
+      <div className="flex h-full flex-row gap-1">
+        {/* macros list container */}
+        <div className="flex w-60 flex-row">
+          {/* macro list action buttons */}
+          <div className="flex flex-col justify-between p-1">
+            {/* top buttons */}
+            <div className="flex flex-col gap-2">
+              <IconButton icon={PlusIcon} />
+            </div>
+            {/* bottom buttons */}
+            <div className="flex flex-col gap-2">
+              <IconButton icon={DocumentDuplicateIcon} />
+              <IconButton icon={TrashIcon} red />
+            </div>
           </div>
-          {/* toggle button */}
-          <Button
-            className="hover:!bg-red-800 !bg-red-700"
-            onClick={() => setRecord(!record)}
-          >
-            Toggle Recording
-          </Button>
-          <Button
-            className="hover:!bg-amber-800 !bg-amber-700 !p-2"
-            onClick={clearMacro}
-          >
-            <TrashIcon className="w-5" />
-          </Button>
+          {/* actual list box */}
+          <div className="flex-1 rounded-md bg-zinc-900"></div>
+        </div>
+        {/* macro editor container */}
+        <div className="flex flex-1 flex-row">
+          {/* macro editor */}
+          <div className="flex flex-1 flex-col rounded-md bg-zinc-900">
+            {/* macro editor header */}
+            <div className="flex flex-row justify-between rounded-t-md bg-zinc-400/20 px-3 py-2">
+              {/* macro name editor */}
+              <div className="text-sm">
+                <span className="text-zinc-100/40">&ldquo;</span>
+                <span
+                  className="-mx-2 -my-1 rounded-md px-2 py-1 hover:bg-zinc-400/5 focus:bg-zinc-400/20 focus:outline-none"
+                  contentEditable="true"
+                  spellCheck="false"
+                >
+                  macro name
+                </span>
+                <span className="text-zinc-100/40">&rdquo;</span>
+              </div>
+              <div className="flex flex-row gap-2 text-sm uppercase">
+                <div className="text-zinc-500">Trigger:</div>
+                <div className="cursor-pointer text-sky-400">Mute Group 1</div>
+              </div>
+            </div>
+            {/* macro actions list */}
+            <div className="_bg-red-500/20 m-2 flex-1 rounded-lg"></div>
+          </div>
+          {/* macro editor action buttons */}
+          <div className="mt-9 flex flex-col justify-between p-1">
+            {/* top buttons */}
+            <div className="flex flex-col gap-2">
+              <IconButton icon={ViewfinderCircleIcon} />
+              <IconButton icon={PlusCircleIcon} />
+              <IconButton icon={MinusCircleIcon} />
+            </div>
+            {/* bottom buttons */}
+            <div className="flex flex-col gap-2">
+              <IconButton icon={PlayCircleIcon} />
+            </div>
+          </div>
         </div>
       </div>
     </>
   );
 };
 
-export default PanelMacros;
+export default asPanel(PanelMacros, PANEL_PROPS);
+export { PANEL_PROPS };

@@ -40,7 +40,7 @@ public:
   {
     unsigned int ac;
     unsigned int chan;
-    unsigned long val;
+    unsigned long long val;
   };
 
   MidiIO();

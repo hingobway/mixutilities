@@ -28,6 +28,10 @@ Primary::Primary(int port)
   Primary::ui_->run(boost::bind(&Primary::ready, this),
                     boost::bind(&Primary::msg_handler, this, boost::placeholders::_1));
 }
+Primary::~Primary(){
+  delete Primary::ui_;
+  delete Primary::midi_;
+}
 
 void Primary::ready()
 {
@@ -62,7 +66,7 @@ void Primary::push_mem(MidiIO::MIDIMessage msg)
   else
   {
     bool found{false};
-    for (int i = 0; i < Primary::midi_mem_.size(); i++)
+    for (int i = 0; i < int(Primary::midi_mem_.size()); i++)
     {
       if (Primary::midi_mem_.at(i).ac == msg.ac && Primary::midi_mem_.at(i).chan == msg.chan)
       {
@@ -101,15 +105,26 @@ void Primary::msg_handler(std::string _msg)
   {
     std::cout << "trying to send midi message but presets don't work anymore\n";
     // Primary::midi_->send(msg["data"]["preset"]);
+    int num = msg["data"]["id"];
+    MidiIO::MIDIMessage midi_msg{0x250000, (unsigned int)num, 1};
+    Primary::midi_->send(midi_msg);
   }
   if (type == "set_record")
   {
     Primary::recordOn_ = msg["data"]["on"];
+    json rmsg = {{"type","record_status"},{"data",{{"on",Primary::recordOn_}}}};
+    Primary::ui_->send(rmsg);
+
     std::cout << "record set to " << (Primary::recordOn_ ? "on" : "off") << "\n";
     if (!Primary::recordOn_)
     {
       std::cout << " -> recorded " << Primary::midi_mem_.size() << " messages\n";
     }
+  }
+  if (type == "record_status")
+  {
+    json rmsg = {{"type","record_status"},{"data",{{"on",Primary::recordOn_}}}};
+    Primary::ui_->send(rmsg);
   }
   if (type == "clear_macro")
   {
